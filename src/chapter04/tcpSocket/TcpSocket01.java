@@ -1,6 +1,5 @@
 package chapter04.tcpSocket;
 
-import sun.jvm.hotspot.debugger.ThreadAccess;
 
 import java.io.*;
 import java.nio.*;
@@ -562,4 +561,69 @@ public class TcpSocket01 {
             pool.execute(r);
         }
     }
+//    服务端与客户端互传对象以及IO流顺序问题
+    public static void test12(){
+        class UserInfo implements Serializable{
+            private long id;
+            private String userName;
+            private String password;
+            public UserInfo(){
+            }
+            public UserInfo(long id ,String userName,String password){
+                this.id = id;
+                this.userName = userName;
+                this.password = password;
+            }
+            public long getId(){
+                return id;
+            }
+            public  String getUserName(){
+                return userName;
+            }
+            public String getPassword(){
+                return password;
+            }
+        }
+        
+        //Server thread
+        Runnable rServer = ()->{
+            try {
+                ServerSocket ss = new ServerSocket(8080);
+                Socket socket = ss.accept();
+                InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream();
+                ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+                for (int i = 0; i < 5; i++) {
+                    UserInfo userInfo = (UserInfo) objectInputStream.readObject();
+                    System.out.println("Server: "+(i+1)+":"+userInfo.getId()+" "+userInfo.userName+" "+userInfo.getPassword());
+                    UserInfo userInfo1 = new UserInfo(i+1,userInfo.userName+i,userInfo.getPassword()+1);
+                    objectOutputStream.writeObject(userInfo1);
+                }
+                objectOutputStream.close();
+                objectInputStream.close();
+                outputStream.close();
+                inputStream.close();
+                socket.close();
+                ss.close();;
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        };
+        rServer.run();
+        Runnable rClient = ()->{
+        } ;
+        rClient.run();
+        new Thread(()->{
+            try {
+                Socket socket = new Socket("127.0.0.1", 8080);
+                InputStream inputStream =socket.getInputStream()
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
 }
